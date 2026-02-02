@@ -1,6 +1,7 @@
 import { BaseProvider } from '@omss/framework';
 import type { ProviderCapabilities, ProviderMediaObject, ProviderResult, Source, Subtitle } from '@omss/framework';
 import axios from 'axios';
+import { RgShowsResponse } from './rgshows.types.js';
 
 export class RgShowsProvider extends BaseProvider {
     readonly id = 'RgShows';
@@ -140,8 +141,3 @@ export class RgShowsProvider extends BaseProvider {
     }
 }
 
-interface RgShowsResponse {
-    stream: {
-        url: string
-    }
-}
