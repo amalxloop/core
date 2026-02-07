@@ -2,6 +2,8 @@
 
 # CinePro Core 🎬
 
+## _🌟 Please star this repository if you like it! 🌟_
+
 **OMSS-compliant streaming backend powering the CinePro ecosystem.**</br> Built with [@omss/framework](https://www.npmjs.com/package/@omss/framework) for extensible, type-safe media scraping and streaming.
 
 </div>
