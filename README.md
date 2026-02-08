@@ -1,6 +1,6 @@
 <div align="center">
 
-# CinePro Core 🎬
+# Kirastreams Core 🎬
 
 **OMSS-compliant streaming backend powering the CinePro ecosystem.**</br> Built with [@omss/framework](https://www.npmjs.com/package/@omss/framework) for extensible, type-safe media scraping and streaming.
 
