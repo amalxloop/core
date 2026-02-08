@@ -10,7 +10,7 @@
 
 ## Overview
 
-CinePro Core is the foundational backend service of CinePro that uses the Open Media Streaming Standard (OMSS) for movies and TV shows. This repository serves as the central scraping and streaming engine, designed to work seamlessly with the [CinePro ecosystem](https://github.com/orgs/cinepro-org/repositories?type=source).
+CinePro Core is the foundational backend service of CinePro that uses the Open Media Streaming Standard (OMSS) for movies and TV shows. This repository serves as the central scraping and streaming engine, designed to work seamlessly with the [KiraStreams ecosystem](https://github.com/orgs/amalxloop/repositories?type=source).
 
 Built on the [OMSS template](https://github.com/omss-spec/template), this backend implements a modular provider system that enables easy integration of multiple streaming sources (that means providers) while maintaining type safety and production-ready standards.
 
@@ -39,7 +39,7 @@ Built on the [OMSS template](https://github.com/omss-spec/template), this backen
 
 ```bash
 # Clone the repository
-git clone https://github.com/cinepro-org/core.git
+git clone https://github.com/amalxloop/core.git
 cd core
 
 # Install dependencies
