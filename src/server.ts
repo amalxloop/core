@@ -43,6 +43,8 @@ async function main() {
         }
     });
 
+    
+
     // Register providers
     const registry = server.getRegistry();
     await registry.discoverProviders(path.join(__dirname, './providers/'))
