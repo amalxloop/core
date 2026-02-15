@@ -1,5 +1,11 @@
 import { BaseProvider } from '@omss/framework';
-import type { ProviderCapabilities, ProviderMediaObject, ProviderResult, Source, Subtitle } from '@omss/framework';
+import type {
+    ProviderCapabilities,
+    ProviderMediaObject,
+    ProviderResult,
+    Source,
+    Subtitle
+} from '@omss/framework';
 import axios from 'axios';
 
 export class VixSrcProvider extends BaseProvider {
@@ -8,15 +14,16 @@ export class VixSrcProvider extends BaseProvider {
     readonly enabled = true;
     readonly BASE_URL = 'https://vixsrc.to';
     readonly HEADERS = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150 Safari/537.36',
+        'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150 Safari/537.36',
         Accept: 'application/json, text/javascript, */*; q=0.01',
         'Accept-Language': 'en-US,en;q=0.9',
         Referer: this.BASE_URL,
-        Origin: this.BASE_URL,
+        Origin: this.BASE_URL
     };
 
     readonly capabilities: ProviderCapabilities = {
-        supportedContentTypes: ['movies', 'tv'],
+        supportedContentTypes: ['movies', 'tv']
     };
 
     /**
@@ -36,7 +43,9 @@ export class VixSrcProvider extends BaseProvider {
     /**
      * Main scraping logic
      */
-    private async getSources(media: ProviderMediaObject): Promise<ProviderResult> {
+    private async getSources(
+        media: ProviderMediaObject
+    ): Promise<ProviderResult> {
         try {
             // Build page URL
             const pageUrl = this.buildPageUrl(media);
@@ -57,17 +66,31 @@ export class VixSrcProvider extends BaseProvider {
             const masterUrl = this.buildMasterUrl(tokenData);
 
             // Fetch master playlist
-            const playlistContent = await this.fetchPlaylist(masterUrl, pageUrl, media);
+            const playlistContent = await this.fetchPlaylist(
+                masterUrl,
+                pageUrl,
+                media
+            );
             if (!playlistContent) {
                 return this.emptyResult('Failed to fetch playlist', media);
             }
 
             // Parse playlist content
-            const result = this.parsePlaylist(playlistContent, masterUrl, pageUrl, media);
+            const result = this.parsePlaylist(
+                playlistContent,
+                masterUrl,
+                pageUrl,
+                media
+            );
 
             return result;
         } catch (error) {
-            return this.emptyResult(error instanceof Error ? error.message : 'Unknown provider error', media);
+            return this.emptyResult(
+                error instanceof Error
+                    ? error.message
+                    : 'Unknown provider error',
+                media
+            );
         }
     }
 
@@ -85,11 +108,14 @@ export class VixSrcProvider extends BaseProvider {
     /**
      * Fetch page HTML
      */
-    private async fetchPage(url: string, media: ProviderMediaObject): Promise<string | null> {
+    private async fetchPage(
+        url: string,
+        media: ProviderMediaObject
+    ): Promise<string | null> {
         try {
             const response = await axios.get(url, {
                 headers: this.HEADERS,
-                timeout: 10000,
+                timeout: 10000
             });
 
             if (response.status !== 200) {
@@ -105,7 +131,10 @@ export class VixSrcProvider extends BaseProvider {
     /**
      * Extract token, expires, and playlist URL from HTML
      */
-    private extractTokenData(html: string, media: ProviderMediaObject): { token: string; expires: string; playlist: string } | null {
+    private extractTokenData(
+        html: string,
+        media: ProviderMediaObject
+    ): { token: string; expires: string; playlist: string } | null {
         const token = html.match(/token["']\s*:\s*["']([^"']+)/)?.[1];
         const expires = html.match(/expires["']\s*:\s*["']([^"']+)/)?.[1];
         const playlist = html.match(/url\s*:\s*["']([^"']+)/)?.[1];
@@ -132,7 +161,11 @@ export class VixSrcProvider extends BaseProvider {
     /**
      * Build master playlist URL with token
      */
-    private buildMasterUrl(tokenData: { token: string; expires: string; playlist: string }): string {
+    private buildMasterUrl(tokenData: {
+        token: string;
+        expires: string;
+        playlist: string;
+    }): string {
         const { token, expires, playlist } = tokenData;
         const separator = playlist.includes('?') ? '&' : '?';
         return `${playlist}${separator}token=${token}&expires=${expires}&h=1`;
@@ -141,14 +174,18 @@ export class VixSrcProvider extends BaseProvider {
     /**
      * Fetch playlist content
      */
-    private async fetchPlaylist(url: string, referer: string, media: ProviderMediaObject): Promise<string | null> {
+    private async fetchPlaylist(
+        url: string,
+        referer: string,
+        media: ProviderMediaObject
+    ): Promise<string | null> {
         try {
             const response = await axios.get(url, {
                 headers: {
                     ...this.HEADERS,
-                    Referer: referer,
+                    Referer: referer
                 },
-                timeout: 10000,
+                timeout: 10000
             });
 
             if (response.status !== 200) {
@@ -164,7 +201,12 @@ export class VixSrcProvider extends BaseProvider {
     /**
      * Parse HLS playlist content
      */
-    private parsePlaylist(content: string, masterUrl: string, pageUrl: string, media: ProviderMediaObject): ProviderResult {
+    private parsePlaylist(
+        content: string,
+        masterUrl: string,
+        pageUrl: string,
+        media: ProviderMediaObject
+    ): ProviderResult {
         const audioTracks = this.parseAudioTracks(content);
         const subtitles = this.parseSubtitles(content, pageUrl);
         const variants = this.parseVariants(content);
@@ -174,13 +216,15 @@ export class VixSrcProvider extends BaseProvider {
         }
 
         // Get highest quality variant
-        const bestVariant = variants.reduce((best, current) => (current.resolution > best.resolution ? current : best));
+        const bestVariant = variants.reduce((best, current) =>
+            current.resolution > best.resolution ? current : best
+        );
 
         const sources: Source[] = [
             {
                 url: this.createProxyUrl(masterUrl, {
                     ...this.HEADERS,
-                    Referer: pageUrl,
+                    Referer: pageUrl
                 }),
                 type: 'hls',
                 quality: `${bestVariant.resolution}p`,
@@ -190,14 +234,14 @@ export class VixSrcProvider extends BaseProvider {
                         : [
                               {
                                   language: 'en',
-                                  label: 'English',
-                              },
+                                  label: 'English'
+                              }
                           ],
                 provider: {
                     id: this.id,
-                    name: this.name,
-                },
-            },
+                    name: this.name
+                }
+            }
         ];
 
         return {
@@ -210,17 +254,19 @@ export class VixSrcProvider extends BaseProvider {
                               code: 'PARTIAL_SCRAPE',
                               message: 'No playable streams found',
                               field: 'sources',
-                              severity: 'warning',
-                          },
+                              severity: 'warning'
+                          }
                       ]
-                    : [],
+                    : []
         };
     }
 
     /**
      * Parse audio tracks from HLS manifest
      */
-    private parseAudioTracks(content: string): Array<{ language: string; label: string }> {
+    private parseAudioTracks(
+        content: string
+    ): Array<{ language: string; label: string }> {
         const tracks: Array<{ language: string; label: string }> = [];
         const lines = content.split('\n');
 
@@ -232,7 +278,7 @@ export class VixSrcProvider extends BaseProvider {
 
             tracks.push({
                 language,
-                label,
+                label
             });
         }
 
@@ -257,10 +303,10 @@ export class VixSrcProvider extends BaseProvider {
             subtitles.push({
                 url: this.createProxyUrl(url, {
                     ...this.HEADERS,
-                    Referer: pageUrl,
+                    Referer: pageUrl
                 }),
                 label: language,
-                format: 'vtt',
+                format: 'vtt'
             });
         }
 
@@ -270,15 +316,18 @@ export class VixSrcProvider extends BaseProvider {
     /**
      * Parse quality variants from HLS manifest
      */
-    private parseVariants(content: string): Array<{ resolution: number; url: string }> {
+    private parseVariants(
+        content: string
+    ): Array<{ resolution: number; url: string }> {
         const variants: Array<{ resolution: number; url: string }> = [];
-        const regex = /#EXT-X-STREAM-INF:[^\n]*RESOLUTION=\d+x(\d+)[^\n]*\n([^\n]+)/g;
+        const regex =
+            /#EXT-X-STREAM-INF:[^\n]*RESOLUTION=\d+x(\d+)[^\n]*\n([^\n]+)/g;
         let match;
 
         while ((match = regex.exec(content)) !== null) {
             variants.push({
                 resolution: parseInt(match[1], 10),
-                url: match[2],
+                url: match[2]
             });
         }
 
@@ -288,7 +337,10 @@ export class VixSrcProvider extends BaseProvider {
     /**
      * Return empty result with diagnostic
      */
-    private emptyResult(message: string, media: ProviderMediaObject): ProviderResult {
+    private emptyResult(
+        message: string,
+        media: ProviderMediaObject
+    ): ProviderResult {
         return {
             sources: [],
             subtitles: [],
@@ -297,9 +349,9 @@ export class VixSrcProvider extends BaseProvider {
                     code: 'PROVIDER_ERROR',
                     message: `${this.name}: ${message}`,
                     field: '',
-                    severity: 'error',
-                },
-            ],
+                    severity: 'error'
+                }
+            ]
         };
     }
 
@@ -310,7 +362,7 @@ export class VixSrcProvider extends BaseProvider {
         try {
             const response = await axios.head(this.BASE_URL, {
                 timeout: 5000,
-                headers: this.HEADERS,
+                headers: this.HEADERS
             });
             return response.status === 200;
         } catch {

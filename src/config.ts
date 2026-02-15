@@ -65,8 +65,8 @@ export const knownThirdPartyProxies: Record<string, RegExp[]> = {
         /\/api\/[^/]+\/proxy\?url=(.+)$/, // /api/*/proxy?url=
         /\/proxy\?.*url=([^&]+)/, // /proxy?url= (with other params)
         /\/stream\/proxy\/(.+)$/, // /stream/proxy/
-        /\/p\/(.+)$/, // Short proxy like /p/
-    ],
+        /\/p\/(.+)$/ // Short proxy like /p/
+    ]
 };
 
 /**

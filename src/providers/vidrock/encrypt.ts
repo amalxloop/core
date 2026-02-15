@@ -24,7 +24,7 @@ export async function encryptItemId(itemId: string) {
             { name: 'AES-CBC', iv: iv },
             key,
             textEncoder.encode(itemId)
-        );  
+        );
 
         // Base64 encode and make URL-safe (similar to VidSrcCC approach)
         const encryptedArray = new Uint8Array(encrypted);

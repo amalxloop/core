@@ -1,5 +1,11 @@
 import { BaseProvider } from '@omss/framework';
-import type { ProviderCapabilities, ProviderMediaObject, ProviderResult, Source, Subtitle } from '@omss/framework';
+import type {
+    ProviderCapabilities,
+    ProviderMediaObject,
+    ProviderResult,
+    Source,
+    Subtitle
+} from '@omss/framework';
 import axios from 'axios';
 
 const UEMBED_API = 'https://uembed.xyz/api/video/tmdb';
@@ -11,15 +17,16 @@ export class UembedProvider extends BaseProvider {
     readonly id = 'uembed';
     readonly name = 'Uembed';
     readonly enabled = true;
-    readonly BASE_URL  = 'https://madplay.site';
+    readonly BASE_URL = 'https://madplay.site';
     readonly HEADERS = {
         Origin: this.BASE_URL,
         Referer: this.BASE_URL,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36',
+        'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
     };
 
     readonly capabilities: ProviderCapabilities = {
-        supportedContentTypes: ['movies', 'tv'],
+        supportedContentTypes: ['movies', 'tv']
     };
 
     async getMovieSources(media: ProviderMediaObject): Promise<ProviderResult> {
@@ -30,11 +37,22 @@ export class UembedProvider extends BaseProvider {
         return this.getSources(media);
     }
 
-    private async getSources(media: ProviderMediaObject): Promise<ProviderResult> {
+    private async getSources(
+        media: ProviderMediaObject
+    ): Promise<ProviderResult> {
         try {
-            const apis = [{ url: this.buildUembedUrl(media), name: 'uembed' }, ...(media.type === 'movie' ? [{ url: this.buildVxrUrl(media), name: 'vxr' }] : []), { url: this.buildHollyUrl(media), name: 'holly' }, { url: this.buildRogflixUrl(media), name: 'rogflix' }];
+            const apis = [
+                { url: this.buildUembedUrl(media), name: 'uembed' },
+                ...(media.type === 'movie'
+                    ? [{ url: this.buildVxrUrl(media), name: 'vxr' }]
+                    : []),
+                { url: this.buildHollyUrl(media), name: 'holly' },
+                { url: this.buildRogflixUrl(media), name: 'rogflix' }
+            ];
 
-            const apiPromises = apis.map((api) => this.fetchApi(api.url).catch(() => null));
+            const apiPromises = apis.map((api) =>
+                this.fetchApi(api.url).catch(() => null)
+            );
             const results = await Promise.all(apiPromises);
 
             const successfulResult = results.find((result) => result !== null);
@@ -42,23 +60,28 @@ export class UembedProvider extends BaseProvider {
                 return this.emptyResult('All APIs failed');
             }
 
-            const sources = await this.processStreams(successfulResult, 'mixed');
+            const sources = await this.processStreams(
+                successfulResult,
+                'mixed'
+            );
             const subtitles: Subtitle[] = [];
 
             return {
                 sources,
                 subtitles,
-                diagnostics: [],
+                diagnostics: []
             };
         } catch (error) {
-            return this.emptyResult(error instanceof Error ? error.message : 'Unknown error');
+            return this.emptyResult(
+                error instanceof Error ? error.message : 'Unknown error'
+            );
         }
     }
 
     private async fetchApi(url: string): Promise<any[]> {
         const response = await axios.get(url, {
             headers: this.HEADERS,
-            timeout: 10000,
+            timeout: 10000
         });
 
         if (response.status !== 200 || !Array.isArray(response.data)) {
@@ -68,10 +91,15 @@ export class UembedProvider extends BaseProvider {
         return response.data;
     }
 
-    private async processStreams(data: any[], apiSource: string): Promise<Source[]> {
+    private async processStreams(
+        data: any[],
+        apiSource: string
+    ): Promise<Source[]> {
         const sources: Source[] = [];
 
-        const streams = data.filter((stream) => stream?.file && typeof stream.file === 'string');
+        const streams = data.filter(
+            (stream) => stream?.file && typeof stream.file === 'string'
+        );
 
         for (const stream of streams) {
             const language = 'eng';
@@ -83,20 +111,25 @@ export class UembedProvider extends BaseProvider {
                     const urlOrigin = new URL(variant.url).origin;
 
                     sources.push({
-                        url: this.createProxyUrl(variant.url, variant.url.includes('xpass.top') ? {} :{
-                            ...this.HEADERS,
-                            Referer: `${urlOrigin}/`,
-                            Origin: urlOrigin,
-                        }),
+                        url: this.createProxyUrl(
+                            variant.url,
+                            variant.url.includes('xpass.top')
+                                ? {}
+                                : {
+                                      ...this.HEADERS,
+                                      Referer: `${urlOrigin}/`,
+                                      Origin: urlOrigin
+                                  }
+                        ),
                         type: 'hls',
                         quality: variant.quality,
                         audioTracks: [
                             {
                                 language,
-                                label: stream.title || 'Unknown',
-                            },
+                                label: stream.title || 'Unknown'
+                            }
                         ],
-                        provider: { id: this.id, name: this.name },
+                        provider: { id: this.id, name: this.name }
                     });
                 }
             } catch {
@@ -106,17 +139,17 @@ export class UembedProvider extends BaseProvider {
                     url: this.createProxyUrl(stream.file, {
                         ...this.HEADERS,
                         Referer: `${urlOrigin}/`,
-                        Origin: urlOrigin,
+                        Origin: urlOrigin
                     }),
-                    type:'hls',
+                    type: 'hls',
                     quality: this.extractQualityFromUrl(stream.file),
                     audioTracks: [
                         {
                             language,
-                            label: stream.title || 'Unknown',
-                        },
+                            label: stream.title || 'Unknown'
+                        }
                     ],
-                    provider: { id: this.id, name: this.name },
+                    provider: { id: this.id, name: this.name }
                 });
             }
         }
@@ -124,14 +157,16 @@ export class UembedProvider extends BaseProvider {
         return this.sortAndDeduplicate(sources);
     }
 
-    private async resolveM3u8(url: string): Promise<{ variants: Array<{ url: string; quality: string }> }> {
+    private async resolveM3u8(
+        url: string
+    ): Promise<{ variants: Array<{ url: string; quality: string }> }> {
         const response = await axios.get(url, {
             headers: {
                 ...this.HEADERS,
-                Accept: 'application/vnd.apple.mpegurl,application/x-mpegURL,*/*',
+                Accept: 'application/vnd.apple.mpegurl,application/x-mpegURL,*/*'
             },
             timeout: 10000,
-            responseType: 'text',
+            responseType: 'text'
         });
 
         const content = response.data;
@@ -141,9 +176,13 @@ export class UembedProvider extends BaseProvider {
                 variants: this.parseM3u8Master(content, url)
                     .map((v) => ({
                         url: v.url,
-                        quality: this.qualityFromResolutionOrBandwidth(v),
+                        quality: this.qualityFromResolutionOrBandwidth(v)
                     }))
-                    .sort((a, b) => this.qualityPriority(b.quality) - this.qualityPriority(a.quality)),
+                    .sort(
+                        (a, b) =>
+                            this.qualityPriority(b.quality) -
+                            this.qualityPriority(a.quality)
+                    )
             };
         }
 
@@ -151,15 +190,22 @@ export class UembedProvider extends BaseProvider {
             variants: [
                 {
                     url,
-                    quality: this.extractQualityFromUrl(url),
-                },
-            ],
+                    quality: this.extractQualityFromUrl(url)
+                }
+            ]
         };
     }
 
-    private parseM3u8Master(content: string, baseUrl: string): Array<{ url: string; resolution?: string; bandwidth?: number }> {
+    private parseM3u8Master(
+        content: string,
+        baseUrl: string
+    ): Array<{ url: string; resolution?: string; bandwidth?: number }> {
         const lines = content.split('\n');
-        const streams: Array<{ url: string; resolution?: string; bandwidth?: number }> = [];
+        const streams: Array<{
+            url: string;
+            resolution?: string;
+            bandwidth?: number;
+        }> = [];
         let current: any = null;
 
         for (const line of lines) {
@@ -193,14 +239,19 @@ export class UembedProvider extends BaseProvider {
                 720: '720p',
                 480: '480p',
                 360: '360p',
-                240: '240p',
+                240: '240p'
             };
             return map[height] || 'Unknown';
         }
 
         if (stream?.bandwidth) {
             const mbps = stream.bandwidth / 1000000;
-            const map: Record<number, string> = { 15: '4K', 8: '1440p', 5: '1080p', 3: '720p' };
+            const map: Record<number, string> = {
+                15: '4K',
+                8: '1440p',
+                5: '1080p',
+                3: '720p'
+            };
             for (const [threshold, quality] of Object.entries(map)) {
                 if (mbps >= parseFloat(threshold)) return quality;
             }
@@ -220,7 +271,7 @@ export class UembedProvider extends BaseProvider {
             '360p': 3,
             '240p': 2,
             HD: 2,
-            Unknown: 1,
+            Unknown: 1
         };
         return priorities[quality] || 1;
     }
@@ -228,16 +279,39 @@ export class UembedProvider extends BaseProvider {
     private sortAndDeduplicate(sources: Source[]): Source[] {
         return sources
             .sort((a, b) => {
-                if (a.audioTracks?.[0]?.language !== b.audioTracks?.[0]?.language) {
-                    return (a.audioTracks?.[0]?.language || 'zz').localeCompare(b.audioTracks?.[0]?.language || 'zz');
+                if (
+                    a.audioTracks?.[0]?.language !==
+                    b.audioTracks?.[0]?.language
+                ) {
+                    return (a.audioTracks?.[0]?.language || 'zz').localeCompare(
+                        b.audioTracks?.[0]?.language || 'zz'
+                    );
                 }
-                return this.qualityPriority(b.quality) - this.qualityPriority(a.quality);
+                return (
+                    this.qualityPriority(b.quality) -
+                    this.qualityPriority(a.quality)
+                );
             })
-            .filter((source, index, self) => index === self.findIndex((s) => s.audioTracks?.[0]?.language === source.audioTracks?.[0]?.language && s.quality === source.quality));
+            .filter(
+                (source, index, self) =>
+                    index ===
+                    self.findIndex(
+                        (s) =>
+                            s.audioTracks?.[0]?.language ===
+                                source.audioTracks?.[0]?.language &&
+                            s.quality === source.quality
+                    )
+            );
     }
 
     private extractQualityFromUrl(url: string): string {
-        const patterns = [/(\d{3,4})p/i, /(\d{3,4})k/i, /quality[_-](\d{3,4})/i, /res[_-](\d{3,4})/i, /(\d{3,4})x\d{3,4}/i];
+        const patterns = [
+            /(\d{3,4})p/i,
+            /(\d{3,4})k/i,
+            /quality[_-](\d{3,4})/i,
+            /res[_-](\d{3,4})/i,
+            /(\d{3,4})x\d{3,4}/i
+        ];
 
         for (const pattern of patterns) {
             const match = url.match(pattern);
@@ -268,7 +342,10 @@ export class UembedProvider extends BaseProvider {
     }
 
     private buildHollyUrl(media: ProviderMediaObject): string {
-        const params = new URLSearchParams({ id: media.tmdbId.toString(), token: 'thestupidthings' });
+        const params = new URLSearchParams({
+            id: media.tmdbId.toString(),
+            token: 'thestupidthings'
+        });
         if (media.type === 'movie') {
             params.append('type', 'movie');
         } else {
@@ -280,7 +357,10 @@ export class UembedProvider extends BaseProvider {
     }
 
     private buildRogflixUrl(media: ProviderMediaObject): string {
-        const params = new URLSearchParams({ id: media.tmdbId.toString(), token: 'thestupidthings' });
+        const params = new URLSearchParams({
+            id: media.tmdbId.toString(),
+            token: 'thestupidthings'
+        });
         if (media.type === 'movie') {
             params.append('type', 'movie');
         } else {
@@ -300,9 +380,9 @@ export class UembedProvider extends BaseProvider {
                     code: 'PROVIDER_ERROR',
                     message: `${this.name}: ${message}`,
                     field: '',
-                    severity: 'error',
-                },
-            ],
+                    severity: 'error'
+                }
+            ]
         };
     }
 

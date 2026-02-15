@@ -1,5 +1,10 @@
 import { BaseProvider, type Subtitle, type SourceType } from '@omss/framework';
-import type { ProviderCapabilities, ProviderMediaObject, ProviderResult, Source } from '@omss/framework';
+import type {
+    ProviderCapabilities,
+    ProviderMediaObject,
+    ProviderResult,
+    Source
+} from '@omss/framework';
 import type { StreamResponse } from './vidzee.types.js';
 import axios from 'axios';
 import decrypt from './decrypt.js';
@@ -10,15 +15,16 @@ export class VidZeeProvider extends BaseProvider {
     readonly enabled = true;
     readonly BASE_URL = 'https://player.vidzee.wtf';
     readonly HEADERS = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150 Safari/537.36',
+        'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150 Safari/537.36',
         Accept: 'application/json, text/javascript, */*; q=0.01',
         'Accept-Language': 'en-US,en;q=0.9',
         Referer: this.BASE_URL,
-        Origin: this.BASE_URL,
+        Origin: this.BASE_URL
     };
 
     readonly capabilities: ProviderCapabilities = {
-        supportedContentTypes: ['movies', 'tv'],
+        supportedContentTypes: ['movies', 'tv']
     };
 
     /**
@@ -35,19 +41,24 @@ export class VidZeeProvider extends BaseProvider {
         return this.getSources(media, {
             type: 'tv',
             season: media.s?.toString(),
-            episode: media.e?.toString(),
+            episode: media.e?.toString()
         });
     }
 
     /**
      * Main scraping logic - Parallel servers + decryption
      */
-    private async getSources(media: ProviderMediaObject, params: { type: 'movie' | 'tv'; season?: string; episode?: string }): Promise<ProviderResult> {
+    private async getSources(
+        media: ProviderMediaObject,
+        params: { type: 'movie' | 'tv'; season?: string; episode?: string }
+    ): Promise<ProviderResult> {
         try {
             const tmdbId = media.tmdbId;
 
             // 1. Parallel server requests
-            const serverPromises = Array.from({ length: 14 }, (_, serverId) => this.fetchServer(tmdbId, serverId, params));
+            const serverPromises = Array.from({ length: 14 }, (_, serverId) =>
+                this.fetchServer(tmdbId, serverId, params)
+            );
             const results = await Promise.allSettled(serverPromises);
             const successfulResponses: StreamResponse[] = [];
 
@@ -63,7 +74,12 @@ export class VidZeeProvider extends BaseProvider {
             }
 
             // 2. Parallel decryption of ALL urls from ALL successful servers
-            const decryptPromises = successfulResponses.map((response) => decrypt(response.url).then((decryptedLinks) => ({ response, decryptedLinks })));
+            const decryptPromises = successfulResponses.map((response) =>
+                decrypt(response.url).then((decryptedLinks) => ({
+                    response,
+                    decryptedLinks
+                }))
+            );
 
             const decryptionResults = await Promise.all(decryptPromises);
 
@@ -77,14 +93,17 @@ export class VidZeeProvider extends BaseProvider {
                 // Process subtitles
                 for (const track of response.tracks) {
                     if (track.url && track.lang) {
-                        const proxySubUrl = this.createProxyUrl(track.url, this.HEADERS);
+                        const proxySubUrl = this.createProxyUrl(
+                            track.url,
+                            this.HEADERS
+                        );
                         const subKey = `${track.lang}_${response.serverInfo.number}`;
 
                         if (!allSubtitles.has(subKey)) {
                             allSubtitles.set(subKey, {
                                 url: proxySubUrl,
                                 label: track.lang.replace(/\d+/g, '').trim(),
-                                format: 'vtt',
+                                format: 'vtt'
                             });
                         }
                     }
@@ -92,47 +111,63 @@ export class VidZeeProvider extends BaseProvider {
             }
 
             // Deduplicate links
-            const uniqueLinks = [...new Set(allDecryptedLinks)].filter((link) => link && link.startsWith('http'));
+            const uniqueLinks = [...new Set(allDecryptedLinks)].filter(
+                (link) => link && link.startsWith('http')
+            );
 
             const sources: Source[] = uniqueLinks.map((link) => ({
-                url: this.createProxyUrl(link, link.includes('fast33lane') ? {"referer":"https://rapidairmax.site/","origin":"https://rapidairmax.site"} : {
-                    ...this.HEADERS,
-                    Referer: `${this.BASE_URL}/`,
-                }),
+                url: this.createProxyUrl(
+                    link,
+                    link.includes('fast33lane')
+                        ? {
+                              referer: 'https://rapidairmax.site/',
+                              origin: 'https://rapidairmax.site'
+                          }
+                        : {
+                              ...this.HEADERS,
+                              Referer: `${this.BASE_URL}/`
+                          }
+                ),
                 type: this.inferType(link) as SourceType,
                 quality: this.inferQuality(link),
                 audioTracks: [
-                    link.includes('phim1280.tv') ? {
-                        language: 'vie',
-                        label: 'Vietnamese',
-                    } :
-                    {
-                        language: 'eng',
-                        label: 'English',
-                    },
+                    link.includes('phim1280.tv')
+                        ? {
+                              language: 'vie',
+                              label: 'Vietnamese'
+                          }
+                        : {
+                              language: 'eng',
+                              label: 'English'
+                          }
                 ],
                 provider: {
                     id: this.id,
-                    name: this.name,
-                },
+                    name: this.name
+                }
             }));
-
-            console.log('Sources generated:', sources);
 
             return {
                 sources,
                 subtitles: Array.from(allSubtitles.values()),
-                diagnostics: [],
+                diagnostics: []
             };
         } catch (error) {
-            return this.emptyResult(error instanceof Error ? error.message : 'Unknown error', media);
+            return this.emptyResult(
+                error instanceof Error ? error.message : 'Unknown error',
+                media
+            );
         }
     }
 
     /**
      * Fetch single server response
      */
-    private async fetchServer(tmdbId: string, serverId: number, params: { type: 'movie' | 'tv'; season?: string; episode?: string }): Promise<StreamResponse | null> {
+    private async fetchServer(
+        tmdbId: string,
+        serverId: number,
+        params: { type: 'movie' | 'tv'; season?: string; episode?: string }
+    ): Promise<StreamResponse | null> {
         try {
             let url = `https://player.vidzee.wtf/api/server?id=${tmdbId}&sr=${serverId}`;
 
@@ -142,7 +177,7 @@ export class VidZeeProvider extends BaseProvider {
 
             const response = await axios.get(url, {
                 headers: this.HEADERS,
-                timeout: 8000,
+                timeout: 8000
             });
 
             return response.data as StreamResponse;
@@ -154,7 +189,10 @@ export class VidZeeProvider extends BaseProvider {
     /**
      * Return empty result with diagnostic
      */
-    private emptyResult(message: string, media: ProviderMediaObject): ProviderResult {
+    private emptyResult(
+        message: string,
+        media: ProviderMediaObject
+    ): ProviderResult {
         // @ts-ignore
         return {
             sources: [],
@@ -164,9 +202,9 @@ export class VidZeeProvider extends BaseProvider {
                     code: 'PROVIDER_ERROR',
                     message: `${this.name}: ${message}`,
                     field: '',
-                    severity: 'error',
-                },
-            ],
+                    severity: 'error'
+                }
+            ]
         };
     }
 
@@ -177,7 +215,7 @@ export class VidZeeProvider extends BaseProvider {
         try {
             const response = await axios.head(this.BASE_URL, {
                 timeout: 5000,
-                headers: this.HEADERS,
+                headers: this.HEADERS
             });
             return response.status === 200;
         } catch {

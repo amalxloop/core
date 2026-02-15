@@ -5,9 +5,10 @@ export default async function decrypt(urls: StreamUrl[]): Promise<string[]> {
 
     try {
         for (const streamurl of urls) {
-            const decoded = Buffer
-                .from(streamurl.link.toString(), 'base64')
-                .toString();
+            const decoded = Buffer.from(
+                streamurl.link.toString(),
+                'base64'
+            ).toString();
 
             const [ivBase64, cipherBase64] = decoded.split(':');
 
@@ -30,8 +31,8 @@ export default async function decrypt(urls: StreamUrl[]): Promise<string[]> {
             );
 
             const plaintextBuffer = await crypto.subtle.decrypt(
-                { 
-                    name: 'AES-CBC', 
+                {
+                    name: 'AES-CBC',
                     iv: iv as ArrayBuffer // Explicit cast
                 },
                 cryptoKey,
@@ -39,7 +40,7 @@ export default async function decrypt(urls: StreamUrl[]): Promise<string[]> {
             );
 
             const decrypted = new TextDecoder().decode(plaintextBuffer);
-            
+
             if (decrypted && decrypted.trim()) {
                 results.push(decrypted.trim());
             }
@@ -57,10 +58,10 @@ export default async function decrypt(urls: StreamUrl[]): Promise<string[]> {
 async function base64ToArrayBuffer(b64: string): Promise<ArrayBuffer> {
     const binaryString = atob(b64);
     const bytes = new Uint8Array(binaryString.length);
-    
+
     for (let i = 0; i < binaryString.length; i++) {
         bytes[i] = binaryString.charCodeAt(i);
     }
-    
+
     return bytes.buffer;
 }
