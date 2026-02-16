@@ -1,11 +1,11 @@
 import { OMSSServer } from '@omss/framework';
 import 'dotenv/config';
-import { fileURLToPath } from 'node:url'
-import path from 'node:path'
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import { knownThirdPartyProxies } from './config.js';
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function main() {
     const server = new OMSSServer({
@@ -19,22 +19,22 @@ async function main() {
 
         // Cache (memory for dev, Redis for prod)
         cache: {
-            type: process.env.CACHE_TYPE as 'memory' | 'redis' ?? 'memory',
+            type: (process.env.CACHE_TYPE as 'memory' | 'redis') ?? 'memory',
             ttl: {
                 sources: 60 * 60,
-                subtitles: 60 * 60 * 24,
+                subtitles: 60 * 60 * 24
             },
             redis: {
                 host: process.env.REDIS_HOST ?? 'localhost',
                 port: Number(process.env.REDIS_PORT ?? 6379),
-                password: process.env.REDIS_PASSWORD,
-            },
+                password: process.env.REDIS_PASSWORD
+            }
         },
 
         // TMDB
         tmdb: {
             apiKey: process.env.TMDB_API_KEY!,
-            cacheTTL: 24 * 60 * 60, // 24h
+            cacheTTL: 24 * 60 * 60 // 24h
         },
 
         // Third Party Proxy removal
@@ -45,7 +45,7 @@ async function main() {
 
     // Register providers
     const registry = server.getRegistry();
-    await registry.discoverProviders(path.join(__dirname, './providers/'))
+    await registry.discoverProviders(path.join(__dirname, './providers/'));
 
     await server.start();
 }

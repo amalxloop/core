@@ -1,5 +1,5 @@
 export interface RgShowsResponse {
     stream: {
-        url: string
-    }
+        url: string;
+    };
 }

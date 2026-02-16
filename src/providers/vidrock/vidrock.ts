@@ -1,5 +1,11 @@
 import { BaseProvider } from '@omss/framework';
-import type { ProviderCapabilities, ProviderMediaObject, ProviderResult, Source, Subtitle } from '@omss/framework';
+import type {
+    ProviderCapabilities,
+    ProviderMediaObject,
+    ProviderResult,
+    Source,
+    Subtitle
+} from '@omss/framework';
 import axios from 'axios';
 import { encryptItemId } from './encrypt.js';
 import { VidrockStreams, VidrockCDN } from './vidrock.types.js';
@@ -13,15 +19,16 @@ export class VidRockProvider extends BaseProvider {
     readonly BASE_URL = 'https://vidrock.net/';
     readonly SUB_BASE_URL = 'https://sub.vdrk.site';
     readonly HEADERS = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150 Safari/537.36',
+        'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150 Safari/537.36',
         Accept: 'application/json, text/javascript, */*; q=0.01',
         'Accept-Language': 'en-US,en;q=0.9',
         Referer: this.BASE_URL,
-        Origin: this.BASE_URL,
+        Origin: this.BASE_URL
     };
 
     readonly capabilities: ProviderCapabilities = {
-        supportedContentTypes: ['movies', 'tv'],
+        supportedContentTypes: ['movies', 'tv']
     };
 
     async getMovieSources(media: ProviderMediaObject): Promise<ProviderResult> {
@@ -32,7 +39,9 @@ export class VidRockProvider extends BaseProvider {
         return this.getSources(media);
     }
 
-    private async getSources(media: ProviderMediaObject): Promise<ProviderResult> {
+    private async getSources(
+        media: ProviderMediaObject
+    ): Promise<ProviderResult> {
         try {
             const pageUrl = await this.buildUrl(media);
             const data = await this.fetchPage(pageUrl);
@@ -52,48 +61,72 @@ export class VidRockProvider extends BaseProvider {
                 let finalUrl: string;
 
                 if (stream.url.startsWith('https://cdn.vidrock.store/')) {
-                    const secondData = (await this.fetchPage(stream.url)) as unknown as VidrockCDN[];
+                    const secondData = (await this.fetchPage(
+                        stream.url
+                    )) as unknown as VidrockCDN[];
                     if (!secondData) continue;
 
                     secondData.forEach((obj) => {
                         if (obj.url.startsWith(PROXY_PREFIX)) {
-                            const encodedPath = obj.url.slice(PROXY_PREFIX.length);
-                            finalUrl = decodeURIComponent(encodedPath.replace(/^\//, ''));
+                            const encodedPath = obj.url.slice(
+                                PROXY_PREFIX.length
+                            );
+                            finalUrl = decodeURIComponent(
+                                encodedPath.replace(/^\//, '')
+                            );
                         } else {
                             // Fallback: if format changes, still return proxied URL
                             finalUrl = obj.url;
                         }
 
                         sources.push({
-                            url: this.createProxyUrl(finalUrl, { ...this.HEADERS, Referer: 'https://lok-lok.cc/', Origin: 'https://lok-lok.cc/' }),
-                            type:'hls',
+                            url: this.createProxyUrl(finalUrl, {
+                                ...this.HEADERS,
+                                Referer: 'https://lok-lok.cc/',
+                                Origin: 'https://lok-lok.cc/'
+                            }),
+                            type: 'hls',
                             quality: obj.resolution + 'p',
                             audioTracks: [
                                 {
-                                    language: stream.language === 'English' ? 'eng' : 'unknown',
-                                    label: stream.language ?? 'Unknown',
-                                },
+                                    language:
+                                        stream.language === 'English'
+                                            ? 'eng'
+                                            : 'unknown',
+                                    label: stream.language ?? 'Unknown'
+                                }
                             ],
-                            provider: { id: this.id, name: this.name },
+                            provider: { id: this.id, name: this.name }
                         });
                     });
 
                     continue;
                 } else {
-                    finalUrl = this.createProxyUrl(stream.url, { ...this.HEADERS, Referer: pageUrl });
+                    finalUrl = this.createProxyUrl(
+                        stream.url,
+                        stream.url.includes('67streams')
+                            ? {
+                                  referrer: this.BASE_URL,
+                                  origin: this.BASE_URL.replace('net/', 'net')
+                              }
+                            : { ...this.HEADERS, Referer: pageUrl }
+                    );
                 }
 
                 sources.push({
                     url: finalUrl,
                     quality: '1080p',
-                    type:'hls',
+                    type: 'hls',
                     audioTracks: [
                         {
-                            language: stream.language === 'English' ? 'eng' : 'unknown',
-                            label: stream.language ?? 'Unknown',
-                        },
+                            language:
+                                stream.language === 'English'
+                                    ? 'eng'
+                                    : 'unknown',
+                            label: stream.language ?? 'Unknown'
+                        }
                     ],
-                    provider: { id: this.id, name: this.name },
+                    provider: { id: this.id, name: this.name }
                 });
             }
 
@@ -102,16 +135,22 @@ export class VidRockProvider extends BaseProvider {
             const result: ProviderResult = {
                 sources,
                 subtitles,
-                diagnostics: [],
+                diagnostics: []
             };
 
             return result;
         } catch (error) {
-            return this.emptyResult(error instanceof Error ? error.message : 'Unknown provider error');
+            return this.emptyResult(
+                error instanceof Error
+                    ? error.message
+                    : 'Unknown provider error'
+            );
         }
     }
 
-    private async fetchSubtitles(media: ProviderMediaObject): Promise<Subtitle[]> {
+    private async fetchSubtitles(
+        media: ProviderMediaObject
+    ): Promise<Subtitle[]> {
         try {
             let subUrl: string;
             if (media.type === 'tv') {
@@ -123,24 +162,27 @@ export class VidRockProvider extends BaseProvider {
             const response = await axios.get(subUrl, {
                 headers: {
                     ...this.HEADERS,
-                    Referer: this.BASE_URL,
+                    Referer: this.BASE_URL
                 },
-                timeout: 10000,
+                timeout: 10000
             });
 
             if (response.status !== 200) {
                 return [];
             }
 
-            const subsData = response.data as Array<{ label: string; file: string }>;
+            const subsData = response.data as Array<{
+                label: string;
+                file: string;
+            }>;
 
             const subtitles: Subtitle[] = subsData.map((sub) => ({
                 url: this.createProxyUrl(sub.file, {
                     ...this.HEADERS,
-                    Referer: subUrl,
+                    Referer: subUrl
                 }),
                 format: 'vtt',
-                label: sub.label,
+                label: sub.label
             }));
 
             return subtitles;
@@ -165,7 +207,7 @@ export class VidRockProvider extends BaseProvider {
         try {
             const response = await axios.get(url, {
                 headers: this.HEADERS,
-                timeout: 10000,
+                timeout: 10000
             });
 
             if (response.status !== 200) return null;
@@ -184,9 +226,9 @@ export class VidRockProvider extends BaseProvider {
                     code: 'PROVIDER_ERROR',
                     message: `${this.name}: ${message}`,
                     field: '',
-                    severity: 'error',
-                },
-            ],
+                    severity: 'error'
+                }
+            ]
         };
     }
 
@@ -194,7 +236,7 @@ export class VidRockProvider extends BaseProvider {
         try {
             const response = await axios.head(this.BASE_URL, {
                 timeout: 5000,
-                headers: this.HEADERS,
+                headers: this.HEADERS
             });
             return response.status === 200;
         } catch {
