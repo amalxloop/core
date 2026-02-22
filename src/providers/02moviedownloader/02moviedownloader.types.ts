@@ -27,19 +27,22 @@ export interface MovieDownloaderDecryptResponse {
                     resolution: number;
                     size: string;
                 }>;
-                captions: Array<{
-                    id?: string;
-                    lan: string;
-                    lanName: string;
-                    url: string;
-                    size: string;
-                    delay: number;
-                } | {
-                    url: string;
-                    lan: string;
-                    lanName: string;
-                    size: number;
-                }>;
+                captions: Array<
+                    | {
+                          id?: string;
+                          lan: string;
+                          lanName: string;
+                          url: string;
+                          size: string;
+                          delay: number;
+                      }
+                    | {
+                          url: string;
+                          lan: string;
+                          lanName: string;
+                          size: number;
+                      }
+                >;
                 limited: boolean;
                 limitedCode: string;
                 freeNum: number;

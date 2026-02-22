@@ -54,19 +54,19 @@ export class MovieDownloader extends BaseProvider {
         media: ProviderMediaObject
     ): Promise<ProviderResult> {
         try {
-        const pageUrl = this.buildPageUrl(media);
+            const pageUrl = this.buildPageUrl(media);
 
-        const encryptedResponse:MovieDownloaderResponse = await this.fetchPage(pageUrl, media);
-        if (!encryptedResponse || !encryptedResponse.data) {
-            return this.emptyResult('Failed to fetch page', media);
-        }
+            const encryptedResponse: MovieDownloaderResponse =
+                await this.fetchPage(pageUrl, media);
+            if (!encryptedResponse || !encryptedResponse.data) {
+                return this.emptyResult('Failed to fetch page', media);
+            }
 
-        // Decrypt data
-        const decryptedData = await decryptData(encryptedResponse.data);
+            // Decrypt data
+            const decryptedData = await decryptData(encryptedResponse.data);
 
-        // Map to ProviderResult
-        return this.mapToProviderResult(decryptedData, media);
-
+            // Map to ProviderResult
+            return this.mapToProviderResult(decryptedData, media);
         } catch (error) {
             return this.emptyResult('Failed to process sources', media);
         }
@@ -89,10 +89,12 @@ export class MovieDownloader extends BaseProvider {
                     url: this.createProxyUrl(download.url, this.HEADERS),
                     type: 'mp4',
                     quality: download.resolution.toString(),
-                    audioTracks: [{
-                        language: 'eng',
-                        label: 'English',
-                    }], // Only has english sources.
+                    audioTracks: [
+                        {
+                            language: 'eng',
+                            label: 'English'
+                        }
+                    ], // Only has english sources.
                     provider: {
                         id: this.id,
                         name: this.name
@@ -108,8 +110,10 @@ export class MovieDownloader extends BaseProvider {
                 const height = qualityMatch
                     ? parseInt(qualityMatch[1])
                     : undefined;
-                const inferredType = (stream.url.includes('.mkv') ? 'mkv' : 'mp4');
-                
+                const inferredType = stream.url.includes('.mkv')
+                    ? 'mkv'
+                    : 'mp4';
+
                 // skip a.111477.xyz as they are behind cloudflare, and do not allow direct access to the video file
                 if (stream.url.includes('a.111477.xyz')) {
                     return;
@@ -119,10 +123,12 @@ export class MovieDownloader extends BaseProvider {
                     url: this.createProxyUrl(stream.url, this.HEADERS),
                     type: inferredType as SourceType,
                     quality: height ? height.toString() : stream.quality,
-                    audioTracks: [{
-                        language: 'eng',
-                        label: 'English',
-                    }], // Only has english sources.
+                    audioTracks: [
+                        {
+                            language: 'eng',
+                            label: 'English'
+                        }
+                    ], // Only has english sources.
                     provider: {
                         id: this.id,
                         name: this.name
@@ -189,11 +195,15 @@ export class MovieDownloader extends BaseProvider {
         media: ProviderMediaObject
     ): Promise<any> {
         try {
-            const response = await fetch(url, {headers: {'accept': 'application/json'}});
+            const response = await fetch(url, {
+                headers: { accept: 'application/json' }
+            });
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            this.console.log(`Fetched data for ${media.title} from ${url}. returned ${response.status}`);
+            this.console.log(
+                `Fetched data for ${media.title} from ${url}. returned ${response.status}`
+            );
             return await response.json();
         } catch (error) {
             throw new Error(

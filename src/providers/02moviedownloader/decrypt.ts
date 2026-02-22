@@ -1,9 +1,14 @@
-import { enc } from "crypto-js";
-import { MovieDownloaderDecryptResponse, MovieDownloaderResponse } from "./02moviedownloader.types.js";
+import { enc } from 'crypto-js';
+import {
+    MovieDownloaderDecryptResponse,
+    MovieDownloaderResponse
+} from './02moviedownloader.types.js';
 
-export async function decryptData(encryptedData: MovieDownloaderResponse['data']): Promise<MovieDownloaderDecryptResponse> {
+export async function decryptData(
+    encryptedData: MovieDownloaderResponse['data']
+): Promise<MovieDownloaderDecryptResponse> {
     const ENCRYPTION_KEY_HASH =
-    '22857ca8d826ed837bafaeafccd75afaa776befdafa495df3e2017f575e4e37a';
+        '22857ca8d826ed837bafaeafccd75afaa776befdafa495df3e2017f575e4e37a';
 
     if (!encryptedData) {
         throw new Error('No data to decrypt');
