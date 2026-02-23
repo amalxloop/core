@@ -140,7 +140,7 @@ export class MovieDownloader extends BaseProvider {
                 const format = caption.url.includes('.srt') ? 'srt' : 'vtt';
 
                 subtitles.push({
-                    url: caption.url,
+                    url: this.createProxyUrl(caption.url),
                     label: caption.lanName || caption.lan,
                     format: format as SubtitleFormat
                 });
