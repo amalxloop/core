@@ -82,7 +82,16 @@ export class MovieDownloader extends BaseProvider {
         if (data.data?.downloadData?.data?.downloads) {
             data.data.downloadData.data.downloads.forEach((download) => {
                 sources.push({
-                    url: this.createProxyUrl(download.url, download.url.includes('hakunaymatata') ? { ...this.HEADERS, "Referer":"https://lok-lok.cc/","Origin":"https://lok-lok.cc/"} : this.HEADERS),
+                    url: this.createProxyUrl(
+                        download.url,
+                        download.url.includes('hakunaymatata')
+                            ? {
+                                  ...this.HEADERS,
+                                  Referer: 'https://lok-lok.cc/',
+                                  Origin: 'https://lok-lok.cc/'
+                              }
+                            : this.HEADERS
+                    ),
                     type: 'mp4',
                     quality: download.resolution.toString() + 'p',
                     audioTracks: [
